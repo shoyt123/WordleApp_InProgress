@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>W</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+        background-color: #C0FFC0;
+        opacity: 1; 
+        text-align: center;
+        }
+        h1, p {
+            margin-top: 0;
+        }
+    </style>
+    <script>
+        // Function to fetch game state from Flask app and update HTML
+        function updateGameState() {
+            $.ajax({
+                type: "GET",
+                url: "/get_game_state",
+                dataType: "json",
+                success: function(data) {
+                    // Update HTML elements with game state
+                    $("#secret_word").text("Secret Word: " + data.secret_word);
+                    $("#attempts_remaining").text("Attempts Remaining: " + data.attempts_remaining);
+                    $("#guessed_words").text("Guessed Words: " + data.guessed_words.join(", "));
+                    $("#game_result").text("Game Result: " + data.game_result);
+                }
+            });
+        }
+
+        // Periodically update game state (every 2 seconds)
+        setInterval(updateGameState, 2000);
+    </script>
+</head>
+<body>
+    <h1>WORDLE</h1>
+    <p id="secret_word">Secret Word: Loading...</p>
+    <p id="attempts_remaining">Attempts Remaining: Loading...</p>
+    <p id="guessed_words">Guessed Words: Loading...</p>
+    <p id="game_result">Game Result: Loading...</p>
+</body>
+</html>
