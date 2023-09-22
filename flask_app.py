@@ -1,0 +1,143 @@
+
+# A very simple Flask Hello World app for you to get started with...
+
+# from flask import Flask
+
+# app = Flask(__name__)
+
+# @app.route('/')
+# def hello_world():
+#     return 'Hello from Flask!'
+
+import random
+from flask import Flask, request, jsonify,  render_template
+
+app = Flask(__name__)
+
+word_list = ["apple", "grape", "power", "canon"]
+secret_word = ""
+attempts_remaining = 6
+guessed_words = []
+game_result = "Take a guess :)"
+
+def choose_secret_word():
+    return random.choice(word_list)
+
+# def check_guess(guess):
+#     global attempts_remaining  # Declare attempts_remaining as global
+#     if len(guess) != len(secret_word):
+#         return "Invalid guess. The word length is not correct."
+
+#     if guess == secret_word:
+#         return "Congratulations! You guessed the word."
+
+#     if guess in guessed_words:
+#         return "You already guessed that word."
+
+#     guessed_words.append(guess)
+#     attempts_remaining -= 1  # Update the global attempts_remaining variable
+
+#     correct_letters = sum(a == b for a, b in zip(guess, secret_word))
+#     misplaced_letters = len(set(guess) & set(secret_word)) - correct_letters
+
+#     return {
+#         "correct_letters": correct_letters,
+#         "misplaced_letters": misplaced_letters,
+#         "attempts_remaining": attempts_remaining,
+#     }
+
+@app.route("/start", methods=["POST"])
+def start_game():
+    global secret_word, attempts_remaining, guessed_words
+    secret_word = choose_secret_word()
+    attempts_remaining = 6
+    guessed_words = []
+    game_result = "Take a guess :)))"  # Set initial game result
+    return jsonify({"message": "Game started!"})
+
+def calculate_misplaced_letters(guess, secret_word):
+    misplaced_letters = 0
+    secret_word_counts = {}
+    guess_counts = {}
+
+    for char in secret_word:
+        secret_word_counts[char] = secret_word_counts.get(char, 0) + 1
+
+    for char in guess:
+        guess_counts[char] = guess_counts.get(char, 0) + 1
+
+    for char, count in guess_counts.items():
+        if char in secret_word_counts:
+            misplaced_letters += min(count, secret_word_counts[char])
+
+    misplaced_letters -= sum(a == b for a, b in zip(guess, secret_word))
+
+    return misplaced_letters
+
+
+@app.route("/guess", methods=["POST"])
+def make_guess():
+    global game_result
+    global attempts_remaining
+    data = request.get_json()
+    guess = data.get("guess")
+    correct_letters = 0
+    misplaced_letters = 0
+
+    # Check if the guess is correct
+    if guess == secret_word:
+        attempts_remaining -= 1
+        game_result = "Congratulations! You guessed the word." # ...in _ tries!
+    else:
+        # Logic to check correct and misplaced letters
+        correct_letters = sum(a == b for a, b in zip(guess, secret_word))
+        #misplaced_letters = len(set(guess) & set(secret_word)) - correct_letters
+        misplaced_letters = calculate_misplaced_letters(guess, secret_word)
+
+        # Update attempts_remaining
+        #global attempts_remaining
+        attempts_remaining -= 1
+
+        # Check if the game is lost (no attempts remaining)
+        if attempts_remaining == 0:
+            game_result = "Game over. You ran out of attempts. The word was: " + secret_word
+        else:
+            # The game is still in progress
+            if attempts_remaining == 6:
+                game_result = "Good first guess!"
+            else:
+                game_result = "Keep guessing."
+
+    # Update the guessed words list
+    guessed_words.append(guess)
+
+    # Return the updated game state, including the game result
+    return jsonify({
+        "correct_letters": correct_letters,
+        "misplaced_letters": misplaced_letters,
+        "attempts_remaining": attempts_remaining,
+        "game_result": game_result
+    })
+
+@app.route("/play", methods=["GET"])
+def play_game():
+    return render_template("game.html", secret_word=secret_word, attempts_remaining=attempts_remaining, guessed_words=guessed_words, game_result="Congratulations! You guessed the word.")  # Modify the game_result as needed
+
+@app.route('/')
+def hello_world():
+    return play_game()
+    # return 'BRUHHHHHHHHHHH!'
+
+@app.route("/get_game_state", methods=["GET"])
+def get_game_state():
+    return jsonify({
+        "secret_word": secret_word,
+        "attempts_remaining": attempts_remaining,
+        "guessed_words": guessed_words,
+        "game_result": game_result  # Modify the game result as needed
+    })
+
+
+if __name__ == "__main__":
+    #app.run(debug=True, port=8081)
+    app.run(debug=True, host='0.0.0.0', port=8081)
