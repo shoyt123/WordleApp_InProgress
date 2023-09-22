@@ -51,6 +51,14 @@
         #secret_word, #attempts_remaining, #guessed_words, #game_result {
             margin-top: 10px;
         }
+
+        .correct-letter {
+        background-color: #5CB85C; /* Green */
+        }
+
+        .misplaced-letter {
+            background-color: #F0AD4E; /* Yellow */
+        }
     </style>
 
     <script>
@@ -73,9 +81,26 @@
         // Function to handle a guess for the current attempt and check if the game is over
         function makeGuess() {
             var guess = "";
+            //var secret_word = "power";
             // Iterate through input boxes for the current attempt and construct the guess
-            $(".current-attempt .letter").each(function() {
-                guess += $(this).val();
+            $(".current-attempt .letter").each(function(index) {
+                var letterInput = $(this);
+                var letter = letterInput.val();
+                guess += letter;
+
+                // Check if the letter is in the correct spot (green)
+                if (letter === secret_word.charAt(index)) {
+                    letterInput.addClass("correct-letter");
+                } else {
+                    letterInput.removeClass("correct-letter");
+                }
+
+                // Check if the letter is in the correct word but in the wrong spot (yellow)
+                if (secret_word.includes(letter) && letter !== secret_word.charAt(index)) {
+                    letterInput.addClass("misplaced-letter");
+                } else {
+                    letterInput.removeClass("misplaced-letter");
+                }
             });
 
             // Send the guess to the Flask app
@@ -111,6 +136,7 @@
             }
         }
 
+
         // Function to start a new game
         function startNewGame() {
             $.ajax({
@@ -118,6 +144,7 @@
                 url: "/start",
                 success: function(data) {
                     // Update game state after starting a new game
+                    secret_word = data.secret_word;
                     updateGameState();
 
                     // Reset current attempt to the first row
