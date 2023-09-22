@@ -1,18 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>W</title>
+    <title>Wordle</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body {
-        background-color: #C0FFC0;
-        opacity: 1; 
-        text-align: center;
+            background-color: #F5F5F5;
+            opacity: 1;
+            text-align: center;
+            font-family: Arial, sans-serif;
         }
+
         h1, p {
             margin-top: 0;
         }
+
+        /* Header and button styles */
+        h1 {
+            background-color: #3498DB;
+            color: #F5F5F5;
+            padding: 20px;
+        }
+
+        button {
+            background-color: #3498DB;
+            color: #F5F5F5;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Table and input styles */
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        td {
+            padding: 5px;
+        }
+
+        input[type="text"] {
+            width: 30px;
+            text-align: center;
+            padding: 5px;
+        }
+
+        /* Other styles */
+        #secret_word, #attempts_remaining, #guessed_words, #game_result {
+            margin-top: 10px;
+        }
     </style>
+
     <script>
         // Function to fetch game state from Flask app and update HTML
         function updateGameState() {
@@ -30,15 +70,127 @@
             });
         }
 
-        // Periodically update game state (every 2 seconds)
+        // Function to handle a guess for the current attempt and check if the game is over
+        function makeGuess() {
+            var guess = "";
+            // Iterate through input boxes for the current attempt and construct the guess
+            $(".current-attempt .letter").each(function() {
+                guess += $(this).val();
+            });
+
+            // Send the guess to the Flask app
+            $.ajax({
+                type: "POST",
+                url: "/guess",
+                contentType: "application/json",
+                data: JSON.stringify({"guess": guess}),
+                dataType: "json",
+                success: function(data) {
+                    // Update game state after making a guess
+                    updateGameState();
+
+                    // Disable the button only when there are no more attempts left
+                    if (data.attempts_remaining <= 0) {
+                        $("#guess_button").prop("disabled", true);
+                    }
+
+                    // Check if the game is over and update the button accordingly
+                    if (data.game_result.includes("Congratulations") || data.game_result.includes("Game over")) {
+                        $("#new_game_button").prop("disabled", false);
+                        $("#guess_button").prop("disabled", true);
+                    }
+                }
+            });
+
+            // Move to the next attempt (row)
+            var currentAttempt = $(".current-attempt");
+            var nextAttempt = currentAttempt.next(".attempt");
+            if (nextAttempt.length > 0) {
+                currentAttempt.removeClass("current-attempt");
+                nextAttempt.addClass("current-attempt");
+            }
+        }
+
+        // Function to start a new game
+        function startNewGame() {
+            $.ajax({
+                type: "POST",
+                url: "/start",
+                success: function(data) {
+                    // Update game state after starting a new game
+                    updateGameState();
+
+                    // Reset current attempt to the first row
+                    $(".attempt").removeClass("current-attempt");
+                    $(".attempt:first").addClass("current-attempt");
+
+                    // Clear the input fields in all attempts
+                    $(".attempt .letter").val("");
+
+                    // Enable the Guess button and disable the New Game button
+                    $("#guess_button").prop("disabled", false);
+                    //$("#new_game_button").prop("disabled", true);
+                }
+            });
+        }
+
+        $(document).on("click", "#new_game_button", startNewGame);
         setInterval(updateGameState, 2000);
     </script>
 </head>
 <body>
     <h1>WORDLE</h1>
+    <table>
+        <tbody>
+            <tr class="attempt current-attempt">
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+            </tr>
+            <tr class="attempt">
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+            </tr>
+            <tr class="attempt">
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+            </tr>
+            <tr class="attempt">
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+            </tr>
+            <tr class="attempt">
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+            </tr>
+            <tr class="attempt">
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+                <td><input type="text" class="letter" maxlength="1"></td>
+            </tr>
+        </tbody>
+    </table>
+    <button id="guess_button" onclick="makeGuess()">Guess</button>
     <p id="secret_word">Secret Word: Loading...</p>
     <p id="attempts_remaining">Attempts Remaining: Loading...</p>
     <p id="guessed_words">Guessed Words: Loading...</p>
     <p id="game_result">Game Result: Loading...</p>
+    <button id="new_game_button">New Game</button>
 </body>
 </html>
